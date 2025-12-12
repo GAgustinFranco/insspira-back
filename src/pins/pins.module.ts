@@ -16,6 +16,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
 import { Sub } from 'src/subscriptions/subscription.entity';
 import { PinsGuardPage } from 'src/common/guards/guard.pin';
 import { Payment } from 'src/payments/payment.entity';
+import { PinsSeeder } from './pins-seeder/pins.seed';
 
 
 
@@ -24,7 +25,7 @@ import { Payment } from 'src/payments/payment.entity';
   NotificationsModule
 ],
   controllers: [PinsController],
-  providers: [PinsService, PinsRepository, PinsGuardPage],
+  providers: [PinsService, PinsRepository, PinsGuardPage, PinsSeeder],
   exports:[PinsService]
 
 })

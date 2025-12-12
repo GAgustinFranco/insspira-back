@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, UnauthorizedException } from '
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from 'src/users/dto/login-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Sub } from 'src/subscriptions/subscription.entity';
@@ -70,12 +70,16 @@ export class AuthService {
         const payload = { sub: user.id, email: user.email, name: user.name };
         const accessToken = this.jwtService.sign(payload);
         return {
-            accessToken,
-            user: subFree.user.id,
-            name: subFree.user.username,
+            token: accessToken,  // ← Cambio aquí
+            user: {
+              id: subFree.user.id,
+              name: subFree.user.name,
+              email: subFree.user.email,
+              username: subFree.user.username,
+            },
             subscription: subFree.plan
+          };
         }
-    }
     
     async login(loginUserDto: LoginUserDto) {
         const { email, password } = loginUserDto;
@@ -127,6 +131,15 @@ export class AuthService {
         const accessToken = this.jwtService.sign(payload);
         
 
-        return {accessToken, subscription: subs.plan}
-    }
+        return {
+            token: accessToken,
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              username: user.username,
+            },
+            subscription: subs.plan
+          };
+        }
 }

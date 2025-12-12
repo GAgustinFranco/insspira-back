@@ -57,11 +57,11 @@ export class PinsController {
     @ApiResponse({ status: 201, description: 'Pin created' })
     @HttpCode(HttpStatus.CREATED)
     async createPins(
-        @Body() dtoPin: pinsDto, 
-        @Req() req: any 
-    ){
-        const idUser = req.user.sub
-        return await this.service.postPinsService(dtoPin, idUser)
+      @Body() dtoPin: pinsDto, 
+      @Req() req: any 
+    ) {
+      const idUser = req.user.sub;  // ✅ Cambiado de req.user.id
+      return await this.service.postPinsService(dtoPin, idUser);
     }
 
     // Update pin (auth) + hashtags

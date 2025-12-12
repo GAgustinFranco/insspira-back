@@ -42,8 +42,12 @@ export class Pin {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => Category, (cat) => cat.pins)
+  @ManyToOne(() => Category, (cat) => cat.pins, { eager: false })
+  @JoinColumn({ name: 'categoryId' })
   category: Category;
+
+  @Column({ type: 'uuid', name: 'categoryId', nullable: false })
+  categoryId: string;
 
   @ManyToOne(() => User, (user) => user.pins)
   @JoinColumn({ name: 'userId' })

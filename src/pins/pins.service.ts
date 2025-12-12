@@ -29,8 +29,8 @@ export class PinsService {
         return await this.repository.modifiPins(userId, dtoPin, pinsId, hashtags)
     }
 
-    async postPinsService(dtoPin: pinsDto, idUser:string) {
-        return await this.repository.createPins(dtoPin, idUser)
+    async postPinsService(dtoPin: pinsDto, idUser: string) {
+        return await this.repository.createPins(dtoPin, idUser);
     }
 
     async deletePinsService(id: string, userId: string) {

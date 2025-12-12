@@ -18,6 +18,8 @@ import { PlanSeeder } from './plans/plan.seeder';
 import { AdminModule } from './admin/admin.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { ReportModule } from './reports/report.module';
+import { PinsSeeder } from './pins/pins-seeder/pins.seed';
+import { SeedModule } from './pins/pins-seeder/seed.module';
 
 @Module({
   imports: [
@@ -50,7 +52,8 @@ import { ReportModule } from './reports/report.module';
     MaintenanceModule,
     SubscriptionModule,
     ReportModule,
-    AdminModule
+    AdminModule,
+    SeedModule
   ],
   controllers: [ AuthController],
   providers: [],
@@ -60,10 +63,12 @@ export class AppModule implements OnModuleInit{
 
   constructor(
     private readonly plan: PlanSeeder,
-    private readonly category: CategorySeeder
+    private readonly category: CategorySeeder,
+    private readonly pinSeeder: PinsSeeder
   ){}
   async onModuleInit() {
     await this.category.run()
     await this.plan.run()
+    await this.pinSeeder.seed()
   }
 }

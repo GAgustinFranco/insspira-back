@@ -72,65 +72,94 @@ export class PinsRepository {
 
  
 
-    async pinsId(id: string){
+    async pinsId(id: string) {
         const pin = await this.pinsRepo.findOne({
-            where: {id: id, },
-            relations:["user", "hashtags",  "comments", "likes"]
-        })
-        if (!pin) throw new NotFoundException("Pin not found");
-
+          where: { id: id },
+          relations: ['user', 'hashtags', 'comments', 'comments.user', 'likes'] // ← Agregar comments.user
+        });
         
-
-
-    return {
-        id: pin.id,                
-        name: pin.user.username,
-        userId: pin.user.id,       
-        image: pin.image,
-        description: pin.description,
-        likes: pin.likesCount,
-        comment: pin.commentsCount,
-        views: pin.viewsCount,
-        comments: pin.comments,
-        hashtag: pin.hashtags,
-        created: pin.createdAt
-    }
-    }
-
-
-    async createPins(dtoPin: pinsDto, idUser:string) {
-
-        const initialización = await this.categoryRepo.findOne({where: {id: dtoPin.categoryId}})
-        if(!initialización)throw new NotFoundException("Error initializing category.")
-
-        const users = await this.userRepo.findOne({where: {id: idUser}})     
-        if(!users)throw new NotFoundException("User does not exist.")
-
-        const create = await this.pinsRepo.create({
-            ...dtoPin,
-            category: initialización,
-            user: users,
-            })
-
-        await this.userRepo.increment({id: users.id}, "pinsCount", 1);
-
-        await this.pinsRepo.save(create);
-    
+        if (!pin) throw new NotFoundException("Pin not found");
+      
         return {
-            id: create.id,
-            category: {id: initialización.id},
+          id: pin.id,                
+          name: pin.user.username,
+          userId: pin.user.id,       
+          image: pin.image,
+          description: pin.description,
+          likes: pin.likesCount,
+          comment: pin.commentsCount,
+          views: pin.viewsCount,
+          // ✅ Mapear comentarios con usuario
+          comments: pin.comments.map(comment => ({
+            id: comment.id,
+            text: comment.text,
+            createdAt: comment.createdAt,
             user: {
-                id: users.id,
-                post: users.pinsCount
-            },
-            image: create.image,   
-            description: create.description,
-            like: create.likesCount,
-            comment: create.commentsCount,
-            view: create.views,
-            hashtag: create.hashtags,
-            date: create.createdAt
+              id: comment.user.id,
+              name: comment.user.name || comment.user.username || 'Anonymous',
+              username: comment.user.username,
+              avatar: comment.user.profilePicture
             }
+          })),
+          hashtag: pin.hashtags,
+          created: pin.createdAt
+        };
+      }
+
+
+    async createPins(dtoPin: pinsDto, idUser: string) {
+        const category = await this.categoryRepo.findOne({ where: { id: dtoPin.categoryId } });
+        if (!category) throw new NotFoundException("Category not found.");
+    
+        const user = await this.userRepo.findOne({ where: { id: idUser } });
+        if (!user) throw new NotFoundException("User not found.");
+    
+        // ✅ Procesar hashtags si existen
+        const hashtags: Hashtag[] = [];
+        if (dtoPin.hashtags && dtoPin.hashtags.length > 0) {
+            for (const tagString of dtoPin.hashtags) {
+            // Limpiar el tag (quitar # si lo tiene)
+            const cleanTag = tagString.trim().replace(/^#/, '');
+            
+            if (!cleanTag) continue; // Saltar tags vacíos
+    
+            // Buscar o crear el hashtag
+            let hashtag = await this.hashtagRepo.findOne({ where: { tag: cleanTag } });
+            if (!hashtag) {
+                hashtag = this.hashtagRepo.create({ tag: cleanTag });
+                await this.hashtagRepo.save(hashtag);
+            }
+            hashtags.push(hashtag);
+            }
+        }
+    
+        // Crear el pin
+        const pin = this.pinsRepo.create({
+            image: dtoPin.image,
+            description: dtoPin.description,
+            category,
+            user,
+            hashtags, // ✅ Agregar hashtags
+        });
+    
+        await this.userRepo.increment({ id: user.id }, "pinsCount", 1);
+        await this.pinsRepo.save(pin);
+
+        return {
+            id: pin.id,
+            category: { id: category.id, name: category.name },
+            user: {
+                id: user.id,
+                post: user.pinsCount + 1
+            },
+            image: pin.image,   
+            description: pin.description,
+            like: pin.likesCount,
+            comment: pin.commentsCount,
+            view: pin.viewsCount,
+            hashtag: pin.hashtags, // ✅ Retornar hashtags
+            date: pin.createdAt
+        };
     }
 
 
@@ -237,51 +266,69 @@ export class PinsRepository {
 
 
     // Create Comment PINS Repository
-    async viewComment( pinId: string) {
-         const pin = await this.pinsRepo.findOne({
-            where: {id: pinId},
-            relations:[ "user", "comments"]
-        })
-
-        return pin?.comments
-        
-    }
-
-    async createComment(userId: string, pinId:string , comment: CommentDto) {
-       
+    async viewComment(pinId: string) {
         const pin = await this.pinsRepo.findOne({
-            where: { id: pinId },
-            relations: ['user'],
+          where: { id: pinId },
+          relations: ['user', 'comments', 'comments.user'] // ← Agregar comments.user
+        });
+      
+        if (!pin) return [];
+      
+        // ✅ Retornar comentarios con información del usuario
+        return pin.comments.map(comment => ({
+          id: comment.id,
+          text: comment.text,
+          createdAt: comment.createdAt,
+          user: {
+            id: comment.user.id,
+            name: comment.user.name || comment.user.username || 'Anonymous',
+            username: comment.user.username,
+            avatar: comment.user.profilePicture
+          }
+        }));
+      }
+
+      async createComment(userId: string, pinId: string, comment: CommentDto) {
+        const pin = await this.pinsRepo.findOne({
+          where: { id: pinId },
+          relations: ['user'],
         });
         
-        if(!pin) throw new NotFoundException("Post not found.")
+        if (!pin) throw new NotFoundException("Post not found.");
         
-        const user = await this.userRepo.findOne({where: {id: userId}})
-        if(!user) throw new NotFoundException("User not found.")
+        const user = await this.userRepo.findOne({ where: { id: userId } });
+        if (!user) throw new NotFoundException("User not found.");
         
-            const commentCreate = this.commentRepo.create({
-            pin,
-            user,
-            text: comment.text
-        })
-        await this.commentRepo.save(commentCreate)
-
-        await this.pinsRepo.increment({id: pin.id}, "commentsCount", 1)
-
+        const commentCreate = this.commentRepo.create({
+          pin,
+          user,
+          text: comment.text
+        });
+        
+        await this.commentRepo.save(commentCreate);
+        await this.pinsRepo.increment({ id: pin.id }, "commentsCount", 1);
+      
         await this.notificationsService.sendActivity({
-            recipientEmail: pin.user.email,
-            type: 'comment',
-            photoTitle: pin.description,
-            comment: comment.text
+          recipientEmail: pin.user.email,
+          type: 'comment',
+          photoTitle: pin.description,
+          comment: comment.text
         });
+      
+        // ✅ Retornar con información del usuario
         return {
-            user: commentCreate.user.id,
-            name: commentCreate.user.name,
-            pin: commentCreate.pin.id,
-            comment: commentCreate.text,
-            date: commentCreate.createdAt
-        }
-    }
+          id: commentCreate.id,
+          text: commentCreate.text,
+          createdAt: commentCreate.createdAt,
+          user: {
+            id: user.id,
+            name: user.name || user.username || 'Anonymous',
+            username: user.username,
+            avatar: user.profilePicture
+          },
+          pin: { id: commentCreate.pin.id }
+        };
+      }
 
     async modifieComment(id: string, comment: CommentDto, userId: string): Promise<Comment> {
         const user = await this.userRepo.findOne({where: {id: userId}})
