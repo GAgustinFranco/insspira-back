@@ -98,7 +98,7 @@ export class PinsController {
     //*OK
     @CheckLimit(ActionType.LIKE)
     @UseGuards(AuthGuard("jwt"), PinsGuardPage)
-    // @UseInterceptors(LimitInterceptor)
+    @UseInterceptors(LimitInterceptor)
     @Post("/like/:id")
     @ApiBearerAuth('jwt')
     @ApiOperation({ summary: 'Create a like (auth)' })

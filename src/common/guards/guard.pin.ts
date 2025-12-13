@@ -25,45 +25,53 @@ export class PinsGuardPage implements CanActivate {
             CHECK_LIMIT_KEY, 
             [context.getHandler(), context.getClass()],
         );
-        if(!action) return true;
+        if (!action) return true;
         
+        const req = context.switchToHttp().getRequest();
+        const user = req.user;
         
-        const req = context.switchToHttp().getRequest()
-        const user = req.user
-        
-        if(!user) throw new ForbiddenException("User not found")
+        if (!user) throw new ForbiddenException("User not found");
 
         req.action = action;
 
-       const activate = await this.sub.findOne({
-        where:{
-            user: {id: user.sub},
-            status: In([SubStatus.ENABLED, SubStatus.ACTIVE])
-            
+        let activate = await this.sub.findOne({
+            where: {
+                user: { id: user.sub },
+                status: In([SubStatus.ENABLED, SubStatus.ACTIVE])
+            }
+        });
+
+        // ⭐ SI NO TIENE SUSCRIPCIÓN → CREAR FREE AUTOMÁTICAMENTE
+        if (!activate) {
+            activate = this.sub.create({
+                user: { id: user.sub },
+                status: SubStatus.ENABLED,
+                dailyPosts: 0,
+                dailyLikes: 0,
+                dailyComments: 0,
+                dailySaves: 0,
+                lastReset: new Date()
+            });
+
+            await this.sub.save(activate);
         }
-       })
 
-       req.subscription = activate
+        // Asignar la sub encontrada o creada
+        req.subscription = activate;
 
-      
-
-        if(!activate) throw new ForbiddenException("You don't have any subscription")
-       
-        
-        // Reset diario
+        // ⭐ Reset DIARIO
         const today = new Date().toISOString().split("T")[0];
-        if(!activate?.lastReset || activate.lastReset.toISOString().split("T")[0] !== today){
+        if (!activate.lastReset || activate.lastReset.toISOString().split("T")[0] !== today) {
             activate.dailyPosts = 0;
             activate.dailyLikes = 0;
             activate.dailySaves = 0;
             activate.dailyComments = 0;
-            activate.lastReset = new Date()
-            await this.sub.save(activate)
+            activate.lastReset = new Date();
+            await this.sub.save(activate);
         }
 
-        return true
+        return true;
     }
-
 
     
 }

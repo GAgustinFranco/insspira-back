@@ -63,12 +63,13 @@ export class PinsRepository {
     // Create PINS Repository
 
     async getPins(page: number, limit: number) {
-     
         return await this.pinsRepo.find({
-            skip: (page - 1) * 10,
-            take: limit,
-            order: {createdAt: "DESC"},
-    })}
+          skip: (page - 1) * limit,     
+          take: limit,
+          relations: ['hashtags'],      
+          order: { createdAt: "DESC" },
+        });
+      }
 
  
 
