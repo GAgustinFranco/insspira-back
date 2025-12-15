@@ -69,19 +69,28 @@ googleAuth() {
 
 @Get('google/callback')
 @UseGuards(AuthGuard('google'))
-async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
+async googleCallback(
+  @Req() req: express.Request,
+  @Res() res: express.Response
+) {
   console.log('>>> callback request reached. req.user =', req.user);
+
   const { token } = req.user as any;
-  if (!token) return res.redirect('https://insspira-front-git-develop-insspiras-projects-818b6651.vercel.app/login?error=notoken');
+  if (!token) {
+    return res.redirect('http://localhost:3001/login?error=notoken');
+  }
+
+  const isProd = process.env.NODE_ENV === 'production';
 
   res.cookie('jwt', token, {
-    httpOnly: true, 
-    secure: true, 
-    sameSite: 'none', 
-    maxAge: 3600000 
+    httpOnly: true,
+    secure: isProd,                 // ✅ false en localhost
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 3600000,
   });
 
-  return res.redirect('https://insspira-front-git-develop-insspiras-projects-818b6651.vercel.app/home');
+  const FRONT_URL = process.env.FRONT_URL || 'http://localhost:3001';
+  return res.redirect(`${FRONT_URL}/home`);
 }
 
 
@@ -100,9 +109,9 @@ async logout(@Res() res: express.Response, @Req() req: express.Request) {
   res.clearCookie("connect.sid", cookieOptions);
   res.clearCookie("oauth_token", cookieOptions);
   res.clearCookie("oauth_refresh_token", cookieOptions);
-  res.clearCookie("jwt", { domain: 'api-latest-ejkf.onrender.com' });
-  res.clearCookie("session", { domain: 'api-latest-ejkf.onrender.com' });
-  res.clearCookie("connect.sid", { domain: 'api-latest-ejkf.onrender.com' });
+  res.clearCookie("jwt", { domain: 'api-latest-uh5g.onrender.com' });
+  res.clearCookie("session", { domain: 'api-latest-uh5g.onrender.com' });
+  res.clearCookie("connect.sid", { domain: 'api-latest-uh5g.onrender.com' });
 
   if (req.session) {
       req.session.destroy((err) => {
