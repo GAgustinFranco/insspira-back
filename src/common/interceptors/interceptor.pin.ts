@@ -70,7 +70,7 @@ intercept(context: ExecutionContext, next: CallHandler<any>): Observable<any> {
                                 break;
                                 
                                 case ActionType.COMMENT:
-                                    if (activate.dailyComments >= 4) {
+                                    if (activate.dailyComments >= 3) {
                                         throw new ForbiddenException('You have reached the daily limit of 3 comments with the free plan');
                                     }
                                     activate.dailyComments++;
