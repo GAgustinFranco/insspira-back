@@ -40,7 +40,7 @@ export class PinsController {
       @Query('limit') limit: number = 20,
       @Req() req: any
     ) {
-      // ✅ req.user existirá SOLO si hay un token válido
+      // req.user existirá SOLO si hay un token válido
       const userId = req.user?.sub;
       
       console.log('🔍 getAllPins - UserId:', userId ? userId.substring(0, 8) + '...' : 'ANONYMOUS');
