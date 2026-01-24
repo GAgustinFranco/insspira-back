@@ -5,7 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 import { AuthService } from './auth/auth.service';
-import  session from "express-session"
+import session from "express-session"
 import passport from "passport"
 import cookieParser from 'cookie-parser';
 
@@ -24,8 +24,10 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-        'https://insspira-front-git-develop-insspiras-projects-818b6651.vercel.app', // Prod Vercel
-        'https://api-latest-ejkf.onrender.com', // Backend mismo
+        'https://insspira.vercel.app', // Tu frontend en Vercel
+        'https://insspira-front-git-develop-insspiras-projects-818b6651.vercel.app',
+        'https://insspira-back-production.up.railway.app', // Tu backend en Railway
+        'https://api-latest-ejkf.onrender.com',
       ];
       
       // Para desarrollo, permitir cualquier origen localhost
@@ -57,14 +59,18 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'devsecret',
-  resave: false,
-  saveUninitialized: false,
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'devsecret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // true en producción
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    }
+  }));
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   app.useGlobalPipes(new ValidationPipe());
 
@@ -78,6 +84,9 @@ app.use(passport.session());
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0'); // Importante: escuchar en 0.0.0.0
+  
+  console.log(`🚀 Application is running on: http://localhost:${port}`);
 }
 bootstrap();
