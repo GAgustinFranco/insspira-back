@@ -7,7 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { FilesModule } from './files/files.module';
 import { CategorySeeder } from './categories/category.seeder';
-import {  AuthController } from './auth/auth.controller';
+import { AuthController } from './auth/auth.controller';
 import { MercadoPagoModule } from './mercadopago/mercadopago.module';
 import { PlanModule } from './plans/plan.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -29,16 +29,35 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: "postgres",
-        database: configService.get("DB_NAME"),
-        host: configService.get("DB_HOST"),
-        port: configService.get("DB_PORT"),
-        username: configService.get("DB_USERNAME"),
-        password: configService.get("DB_PASSWORD") as string,
-        entities: [__dirname + '/**/*.entity{.ts,.js}', Payment],
-        synchronize: true
-      })
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+        const isProduction = configService.get('NODE_ENV') === 'production';
+
+        // Configuración para producción (Railway con DATABASE_URL)
+        if (databaseUrl) {
+          return {
+            type: 'postgres' as const,
+            url: databaseUrl,
+            entities: [__dirname + '/**/*.entity{.ts,.js}', Payment],
+            synchronize: isProduction ? false : true,
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
+            autoLoadEntities: true,
+          };
+        }
+
+        // Configuración para desarrollo (variables separadas)
+        return {
+          type: 'postgres' as const,
+          database: configService.get<string>('DB_NAME'),
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT') || 5432,
+          username: configService.get<string>('DB_USERNAME'),
+          password: configService.get<string>('DB_PASSWORD'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}', Payment],
+          synchronize: true,
+          autoLoadEntities: true,
+        };
+      },
     }),
     TypeOrmModule.forFeature([Payment]),
     UsersModule,
@@ -55,20 +74,19 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
     AdminModule,
     SeedModule
   ],
-  controllers: [ AuthController],
+  controllers: [AuthController],
   providers: [],
 })
-
-export class AppModule implements OnModuleInit{
-
+export class AppModule implements OnModuleInit {
   constructor(
     private readonly plan: PlanSeeder,
     private readonly category: CategorySeeder,
     private readonly pinSeeder: PinsSeeder
-  ){}
+  ) {}
+  
   async onModuleInit() {
-    await this.category.run()
-    await this.plan.run()
-    await this.pinSeeder.seed()
+    await this.category.run();
+    await this.plan.run();
+    await this.pinSeeder.seed();
   }
 }
