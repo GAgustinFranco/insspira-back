@@ -61,7 +61,7 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           entities: [__dirname + '/**/*.entity{.ts,.js}', Payment],
-          synchronize: true,
+          synchronize: false,
           autoLoadEntities: true,
           logging: true,
         };
