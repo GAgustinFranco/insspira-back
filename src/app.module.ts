@@ -11,7 +11,6 @@ import { AuthController } from './auth/auth.controller';
 import { MercadoPagoModule } from './mercadopago/mercadopago.module';
 import { PlanModule } from './plans/plan.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { MercadoPagoController } from './mercadopago/mercadopago.controller';
 import { Payment } from './payments/payment.entity';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { PlanSeeder } from './plans/plan.seeder';
@@ -25,7 +24,9 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: './.env.development'
+      // En producción, Railway inyecta las variables directamente
+      envFilePath: process.env.NODE_ENV === 'production' ? undefined : './.env.development',
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -33,8 +34,12 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
         const databaseUrl = configService.get<string>('DATABASE_URL');
         const isProduction = configService.get('NODE_ENV') === 'production';
 
+        console.log('🔍 DATABASE_URL exists:', !!databaseUrl);
+        console.log('🌍 Environment:', isProduction ? 'production' : 'development');
+
         // Configuración para producción (Railway con DATABASE_URL)
         if (databaseUrl) {
+          console.log('✅ Using DATABASE_URL for connection');
           return {
             type: 'postgres' as const,
             url: databaseUrl,
@@ -46,6 +51,7 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
         }
 
         // Configuración para desarrollo (variables separadas)
+        console.log('⚠️ Using individual DB variables');
         return {
           type: 'postgres' as const,
           database: configService.get<string>('DB_NAME'),
