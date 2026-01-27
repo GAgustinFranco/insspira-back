@@ -24,35 +24,36 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // En producción, Railway inyecta las variables directamente
-      envFilePath: process.env.NODE_ENV === 'production' ? undefined : './.env.development',
-      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      // NO uses envFilePath en producción
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
-        const isProduction = configService.get('NODE_ENV') === 'production';
 
-        console.log('🔍 DATABASE_URL exists:', !!databaseUrl);
-        console.log('🌍 Environment:', isProduction ? 'production' : 'development');
+        console.log('========================================');
+        console.log('🔍 DATABASE_URL:', databaseUrl ? 'FOUND' : 'NOT FOUND');
+        console.log('🔍 First 40 chars:', databaseUrl?.substring(0, 40));
+        console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+        console.log('========================================');
 
-        // Configuración para producción (Railway con DATABASE_URL)
+        // SIEMPRE intenta usar DATABASE_URL primero
         if (databaseUrl) {
-          console.log('✅ Using DATABASE_URL for connection');
+          console.log('✅ Connecting with DATABASE_URL');
           return {
             type: 'postgres' as const,
             url: databaseUrl,
             entities: [__dirname + '/**/*.entity{.ts,.js}', Payment],
-            synchronize: isProduction ? false : true,
-            ssl: isProduction ? { rejectUnauthorized: false } : false,
+            synchronize: true, // Temporalmente true para crear tablas
+            ssl: { rejectUnauthorized: false },
             autoLoadEntities: true,
+            logging: true, // Ver queries SQL en logs
           };
         }
 
-        // Configuración para desarrollo (variables separadas)
-        console.log('⚠️ Using individual DB variables');
-        return {
+        // Fallback a variables individuales SOLO si DATABASE_URL no existe
+        console.log('⚠️ FALLBACK: Using individual DB variables');
+        const dbConfig = {
           type: 'postgres' as const,
           database: configService.get<string>('DB_NAME'),
           host: configService.get<string>('DB_HOST'),
@@ -62,7 +63,16 @@ import { SeedModule } from './pins/pins-seeder/seed.module';
           entities: [__dirname + '/**/*.entity{.ts,.js}', Payment],
           synchronize: true,
           autoLoadEntities: true,
+          logging: true,
         };
+        
+        console.log('DB Config:', {
+          host: dbConfig.host,
+          port: dbConfig.port,
+          database: dbConfig.database,
+        });
+        
+        return dbConfig;
       },
     }),
     TypeOrmModule.forFeature([Payment]),
