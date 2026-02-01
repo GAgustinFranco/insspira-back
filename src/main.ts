@@ -23,10 +23,8 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-        'https://insspira.vercel.app', // Tu frontend en Vercel
-        'https://insspira-front-git-develop-insspiras-projects-818b6651.vercel.app',
+        'https://insspira-front-pink.vercel.app', // Tu frontend en Vercel
         'https://insspira-back-production.up.railway.app', // Tu backend en Railway
-        'https://api-latest-ejkf.onrender.com',
       ];
       
       // Para desarrollo, permitir cualquier origen localhost
