@@ -4,7 +4,7 @@ import { CategoryService } from "./category.service";
 import { ApiTags, ApiOperation, ApiBody } from "@nestjs/swagger";
 
 @ApiTags("Categories")
-@Controller("category")
+@Controller("categories")
 export class CategoryController {
   constructor(private readonly service: CategoryService) {}
 
