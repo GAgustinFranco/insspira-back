@@ -56,9 +56,9 @@ export class MercadoPagoService {
         email: email,
       },
       back_urls: {
-        success: process.env.BACK_URL_SUCCESS || 'https://api-latest-ejkf.onrender.com/success',
-        failure: process.env.BACK_URL_FAILURE || 'https://api-latest-ejkf.onrender.com/failure',
-        pending: process.env.BACK_URL_PENDING || 'https://api-latest-ejkf.onrender.com/pending',
+        success: process.env.BACK_URL_SUCCESS || 'https://insspira-back-production.up.railway.app/success',
+        failure: process.env.BACK_URL_FAILURE || 'https://insspira-back-production.up.railway.app/failure',
+        pending: process.env.BACK_URL_PENDING || 'https://insspira-back-production.up.railway.app/pending',
       },
       auto_return: 'approved',
       payment_methods: {
@@ -134,7 +134,7 @@ export class MercadoPagoService {
         currency_id: 'ARS',
       },
       payer_email: email,
-      back_url: process.env.BACK_URL_SUCCESS || 'https://api-latest-ejkf.onrender.com/success',
+      back_url: process.env.BACK_URL_SUCCESS || 'https://insspira-back-production.up.railway.app/success',
     };
 
     if (userId) {

@@ -77,19 +77,19 @@ async googleCallback(
 
   const { token } = req.user as any;
   if (!token) {
-    return res.redirect('http://localhost:3001/login?error=notoken');
+    return res.redirect('https://insspira-front-pink.vercel.app/login?error=notoken');
   }
 
   const isProd = process.env.NODE_ENV === 'production';
 
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: isProd,                 // ✅ false en localhost
+    secure: isProd,                 
     sameSite: isProd ? 'none' : 'lax',
     maxAge: 3600000,
   });
 
-  const FRONT_URL = process.env.FRONT_URL || 'http://localhost:3001';
+  const FRONT_URL = process.env.FRONT_URL || 'https://insspira-front-pink.vercel.app';
   return res.redirect(`${FRONT_URL}/home`);
 }
 
@@ -109,9 +109,9 @@ async logout(@Res() res: express.Response, @Req() req: express.Request) {
   res.clearCookie("connect.sid", cookieOptions);
   res.clearCookie("oauth_token", cookieOptions);
   res.clearCookie("oauth_refresh_token", cookieOptions);
-  res.clearCookie("jwt", { domain: 'api-latest-uh5g.onrender.com' });
-  res.clearCookie("session", { domain: 'api-latest-uh5g.onrender.com' });
-  res.clearCookie("connect.sid", { domain: 'api-latest-uh5g.onrender.com' });
+  res.clearCookie("jwt", { domain: 'insspira-back-production.up.railway.app' });
+  res.clearCookie("session", { domain: 'insspira-back-production.up.railway.app' });
+  res.clearCookie("connect.sid", { domain: 'insspira-back-production.up.railway.app' });
 
   if (req.session) {
       req.session.destroy((err) => {
